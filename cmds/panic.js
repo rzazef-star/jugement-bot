@@ -5,7 +5,7 @@ module.exports = {
     name: "panic",
     async execute(message, args, client) {
 
-        if (message.author.id !== config.owner)
+        if (!config.owners.includes(message.author.id))
             return message.reply("Owner only.");
 
         const backup = JSON.parse(fs.readFileSync("./backup.json"));
