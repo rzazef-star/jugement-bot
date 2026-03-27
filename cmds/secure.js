@@ -1,30 +1,23 @@
-const fs = require("fs");
-const config = require("../config.json");
+if (secure.enabled) {
 
-module.exports = {
-    name: "secure",
-    async execute(message, args) {
+    if (message.author.bot) return;
 
-        if (!config.owners.includes(message.author.id))
-            return message.reply("Only Owner !");
+    const linkRegex = /(https?:\/\/|discord\.gg)/i;
 
-        if (!args[0]) 
-            return message.reply("Usage: +secure on / off");
+    if (linkRegex.test(message.content)) {
 
-        const data = JSON.parse(fs.readFileSync("./secure.json"));
+        message.delete().catch(() => {});
 
-        if (args[0] === "on") {
-            data.enabled = true;
-            fs.writeFileSync("./secure.json", JSON.stringify(data, null, 2));
-            return message.reply(" Secure ON");
+        // timeout 10 secondes
+        if (message.member && message.member.moderatable) {
+            message.member.timeout(10 * 1000, "Anti-link").catch(() => {});
         }
 
-        if (args[0] === "off") {
-            data.enabled = false;
-            fs.writeFileSync("./secure.json", JSON.stringify(data, null, 2));
-            return message.reply(" Secure OFF");
-        }
-
-        message.reply("Usage: +secure on / off");
+        const log = message.guild.channels.cache.find(c => c.name === "📂・link");
+        if (log) log.send(`🔗 ${message.author} a envoyé un lien (timeout 10s)`);
     }
-};
+
+    if (message.content.includes("@everyone") || message.content.includes("@here")) {
+        message.delete().catch(() => {});
+    }
+}
