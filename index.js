@@ -85,4 +85,4 @@ client.once("clientReady", () => {
     console.log(`BOT CONNECTED BOT USERNAME = ${client.user.tag}`);
 });
 
-client.login(config.token);
+client.login(process.env.TOKEN);
