@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const fs = require("fs");
 const config = require("./config.json");
+const whitelist = require("./whitelist");
 
 const client = new Client({
     intents: [
@@ -47,6 +48,9 @@ client.on("messageCreate", async message => {
     const linkRegex = /(https?:\/\/|discord\.gg)/i;
 
     if (linkRegex.test(message.content)) {
+
+        if (config.owners.includes(message.author.id) || whitelist.has(message.author.id)) return;
+
         message.delete().catch(() => {});
 
         if (message.member && message.member.moderatable) {
@@ -59,6 +63,9 @@ client.on("messageCreate", async message => {
 
     // ANTI EVERYONE
     if (message.content.includes("@everyone") || message.content.includes("@here")) {
+
+        if (config.owners.includes(message.author.id) || whitelist.has(message.author.id)) return;
+
         message.delete().catch(() => {});
 
         const log = message.guild.channels.cache.find(c => c.name === "📂・everyone");
