@@ -5,85 +5,87 @@ module.exports = {
     name: "backup",
     async execute(message, args) {
 
-        if (message.author.id !== config.owner)
-            return message.reply(" Owner only");
+        if (!config.owners.includes(message.author.id))
+            return message.reply("Owner only.");
 
-        const action = args[0]?.toLowerCase();
-        if (!action) return message.reply("backup create / backup load");
+        if (!args[0]) return message.reply("backup save / load");
 
-        // CREATE
-        if (action === "create") {
+        // SAVE
+        if (args[0] === "save") {
 
-            const data = {
+            const backup = {
                 roles: [],
                 channels: []
             };
 
             message.guild.roles.cache.forEach(role => {
                 if (role.id === message.guild.id) return;
-
-                data.roles.push({
+                backup.roles.push({
                     name: role.name,
                     color: role.color,
+                    permissions: role.permissions.bitfield,
                     hoist: role.hoist,
-                    position: role.position,
-                    permissions: role.permissions.bitfield.toString()
+                    mentionable: role.mentionable,
+                    position: role.position
                 });
             });
 
-            message.guild.channels.cache.forEach(channel => {
-                data.channels.push({
-                    name: channel.name,
-                    type: channel.type,
-                    parent: channel.parentId
+            message.guild.channels.cache.forEach(ch => {
+                backup.channels.push({
+                    name: ch.name,
+                    type: ch.type,
+                    position: ch.position
                 });
             });
 
-            fs.writeFileSync("./backup.json", JSON.stringify(data, null, 2));
-            message.reply(" Backup create");
+            fs.writeFileSync("./backup.json", JSON.stringify(backup, null, 2));
+            return message.reply("Backup saved.");
         }
 
-        // LOAD
-        if (action === "load") {
-
-            if (!fs.existsSync("./backup.json"))
-                return message.reply("+backup Create");
+        // LOAD (ULTRA FAST)
+        if (args[0] === "load") {
 
             const backup = JSON.parse(fs.readFileSync("./backup.json"));
 
-            // delete channels
-            for (const ch of message.guild.channels.cache.values()) {
-                await ch.delete().catch(() => {});
-            }
+            await message.reply("Loading backup...");
 
-            // delete roles
-            for (const role of message.guild.roles.cache.values()) {
-                if (role.id !== message.guild.id)
-                    await role.delete().catch(() => {});
-            }
+            // delete channels fast
+            await Promise.all(
+                message.guild.channels.cache.map(ch => ch.delete().catch(() => {}))
+            );
 
-            // create roles
-            const createdRoles = {};
-            for (const role of backup.roles.reverse()) {
-                const newRole = await message.guild.roles.create({
-                    name: role.name,
-                    color: role.color,
-                    hoist: role.hoist,
-                    permissions: BigInt(role.permissions)
-                });
+            // delete roles fast
+            await Promise.all(
+                message.guild.roles.cache.map(role => {
+                    if (role.id !== message.guild.id)
+                        return role.delete().catch(() => {});
+                })
+            );
 
-                createdRoles[role.name] = newRole.id;
-            }
+            // create roles fast
+            await Promise.all(
+                backup.roles.map(role =>
+                    message.guild.roles.create({
+                        name: role.name,
+                        color: role.color,
+                        permissions: role.permissions,
+                        hoist: role.hoist,
+                        mentionable: role.mentionable
+                    }).catch(() => {})
+                )
+            );
 
-            // create channels
-            for (const ch of backup.channels) {
-                await message.guild.channels.create({
-                    name: ch.name,
-                    type: ch.type
-                });
-            }
+            // create channels fast
+            await Promise.all(
+                backup.channels.map(ch =>
+                    message.guild.channels.create({
+                        name: ch.name,
+                        type: ch.type
+                    }).catch(() => {})
+                )
+            );
 
-            message.reply(" Backup load");
+            message.channel.send("Backup loaded ⚡");
         }
     }
 };
