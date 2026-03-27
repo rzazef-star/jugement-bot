@@ -6,12 +6,14 @@ module.exports = {
     async execute(message, args) {
 
         if (!config.owners.includes(message.author.id))
-            return message.reply("Owner only.");
+            return message.reply("Owner only");
 
-        if (!args[0]) return message.reply("backup save / load");
+        const sub = args[0];
 
-        // SAVE
-        if (args[0] === "save") {
+        if (!sub) return message.reply("use: +backup create / load");
+
+        // CREATE
+        if (sub === "create") {
 
             const backup = {
                 roles: [],
@@ -19,7 +21,9 @@ module.exports = {
             };
 
             message.guild.roles.cache.forEach(role => {
+                if (role.managed) return;
                 if (role.id === message.guild.id) return;
+
                 backup.roles.push({
                     name: role.name,
                     color: role.color,
@@ -39,53 +43,61 @@ module.exports = {
             });
 
             fs.writeFileSync("./backup.json", JSON.stringify(backup, null, 2));
-            return message.reply("Backup saved.");
+
+            return message.reply("Backup created");
         }
 
-        // LOAD (ULTRA FAST)
-        if (args[0] === "load") {
+        // LOAD
+        if (sub === "load") {
+
+            if (!fs.existsSync("./backup.json"))
+                return message.reply("No backup found");
 
             const backup = JSON.parse(fs.readFileSync("./backup.json"));
 
-            await message.reply("Loading backup...");
+            await message.reply("Loading...");
 
-            // delete channels fast
+            // delete channels
             await Promise.all(
-                message.guild.channels.cache.map(ch => ch.delete().catch(() => {}))
+                message.guild.channels.cache.map(c => c.delete().catch(() => {}))
             );
 
-            // delete roles fast
+            // delete roles
             await Promise.all(
-                message.guild.roles.cache.map(role => {
-                    if (role.id !== message.guild.id)
-                        return role.delete().catch(() => {});
+                message.guild.roles.cache.map(r => {
+                    if (r.id !== message.guild.id && !r.managed)
+                        return r.delete().catch(() => {});
                 })
             );
 
-            // create roles fast
+            // create roles
             await Promise.all(
-                backup.roles.map(role =>
-                    message.guild.roles.create({
-                        name: role.name,
-                        color: role.color,
-                        permissions: role.permissions,
-                        hoist: role.hoist,
-                        mentionable: role.mentionable
-                    }).catch(() => {})
-                )
+                backup.roles
+                    .sort((a,b)=>a.position-b.position)
+                    .map(r =>
+                        message.guild.roles.create({
+                            name: r.name,
+                            color: r.color,
+                            permissions: r.permissions,
+                            hoist: r.hoist,
+                            mentionable: r.mentionable
+                        }).catch(() => {})
+                    )
             );
 
-            // create channels fast
+            // create channels
             await Promise.all(
-                backup.channels.map(ch =>
-                    message.guild.channels.create({
-                        name: ch.name,
-                        type: ch.type
-                    }).catch(() => {})
-                )
+                backup.channels
+                    .sort((a,b)=>a.position-b.position)
+                    .map(c =>
+                        message.guild.channels.create({
+                            name: c.name,
+                            type: c.type
+                        }).catch(() => {})
+                    )
             );
 
-            message.channel.send("Backup loaded ⚡");
+            message.channel.send("Backup loaded");
         }
     }
 };
