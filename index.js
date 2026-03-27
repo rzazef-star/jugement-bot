@@ -42,34 +42,39 @@ client.on("messageDelete", message => {
 
 client.on("messageCreate", async message => {
 
-    if (message.author.bot) return;
+    if (!message.guild || message.author.bot) return;
+
+    const linkRegex = /(https?:\/\/|www\.|discord\.gg|discord\.com\/invite)/i;
+
+    const isOwner = config.owners.includes(message.author.id);
+    const isWl = whitelist.has ? whitelist.has(message.author.id) : false;
 
     // ANTI LINK
-    const linkRegex = /(https?:\/\/|discord\.gg)/i;
-
     if (linkRegex.test(message.content)) {
 
-        if (config.owners.includes(message.author.id) || whitelist.has(message.author.id)) return;
+        if (!isOwner && !isWl) {
 
-        message.delete().catch(() => {});
+            message.delete().catch(() => {});
 
-        if (message.member && message.member.moderatable) {
-            message.member.timeout(10 * 1000, "Anti-link").catch(() => {});
+            if (message.member && message.member.moderatable) {
+                message.member.timeout(10 * 1000, "Anti-link").catch(() => {});
+            }
+
+            const log = message.guild.channels.cache.find(c => c.name === "📂・link");
+            if (log) log.send(`🔗 ${message.author} a envoyé un lien (timeout 10s)`);
         }
-
-        const log = message.guild.channels.cache.find(c => c.name === "📂・link");
-        if (log) log.send(`🔗 ${message.author} a envoyé un lien (timeout 10s)`);
     }
 
     // ANTI EVERYONE
     if (message.content.includes("@everyone") || message.content.includes("@here")) {
 
-        if (config.owners.includes(message.author.id) || whitelist.has(message.author.id)) return;
+        if (!isOwner && !isWl) {
 
-        message.delete().catch(() => {});
+            message.delete().catch(() => {});
 
-        const log = message.guild.channels.cache.find(c => c.name === "📂・everyone");
-        if (log) log.send(`📢 ${message.author} a utilisé everyone`);
+            const log = message.guild.channels.cache.find(c => c.name === "📂・everyone");
+            if (log) log.send(` ${message.author} a utilisé everyone`);
+        }
     }
 
     if (!message.content.startsWith(config.prefix)) return;
