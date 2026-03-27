@@ -1,6 +1,8 @@
 const fs = require("fs");
 const config = require("../config.json");
 
+const PATH = "./backup.json";
+
 module.exports = {
     name: "backup",
     async execute(message, args) {
@@ -10,7 +12,7 @@ module.exports = {
 
         const sub = args[0];
 
-        if (!sub) return message.reply("use: +backup create / load");
+        if (!sub) return message.reply("+backup create / load");
 
         // CREATE
         if (sub === "create") {
@@ -27,7 +29,7 @@ module.exports = {
                 backup.roles.push({
                     name: role.name,
                     color: role.color,
-                    permissions: role.permissions.bitfield,
+                    permissions: role.permissions.bitfield.toString(),
                     hoist: role.hoist,
                     mentionable: role.mentionable,
                     position: role.position
@@ -42,20 +44,20 @@ module.exports = {
                 });
             });
 
-            fs.writeFileSync("./backup.json", JSON.stringify(backup, null, 2));
+            fs.writeFileSync(PATH, JSON.stringify(backup, null, 2));
 
-            return message.reply("Backup created");
+            return message.reply("Backup created ");
         }
 
         // LOAD
         if (sub === "load") {
 
-            if (!fs.existsSync("./backup.json"))
-                return message.reply("No backup found");
+            if (!fs.existsSync(PATH))
+                return message.reply("No backup file");
 
-            const backup = JSON.parse(fs.readFileSync("./backup.json"));
+            const backup = JSON.parse(fs.readFileSync(PATH));
 
-            await message.reply("Loading...");
+            await message.reply("Loading backup...");
 
             // delete channels
             await Promise.all(
@@ -70,7 +72,7 @@ module.exports = {
                 })
             );
 
-            // create roles
+            // create roles fast
             await Promise.all(
                 backup.roles
                     .sort((a,b)=>a.position-b.position)
@@ -78,14 +80,14 @@ module.exports = {
                         message.guild.roles.create({
                             name: r.name,
                             color: r.color,
-                            permissions: r.permissions,
+                            permissions: BigInt(r.permissions),
                             hoist: r.hoist,
                             mentionable: r.mentionable
                         }).catch(() => {})
                     )
             );
 
-            // create channels
+            // create channels fast
             await Promise.all(
                 backup.channels
                     .sort((a,b)=>a.position-b.position)
@@ -97,7 +99,7 @@ module.exports = {
                     )
             );
 
-            message.channel.send("Backup loaded");
+            message.channel.send("Backup loaded ");
         }
     }
 };
