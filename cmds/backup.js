@@ -8,10 +8,10 @@ module.exports = {
     async execute(message, args) {
 
         if (!config.owners.includes(message.author.id))
-            return message.reply("Owner only");
+            return message.channel.send("Owner only");
 
         const sub = args[0];
-        if (!sub) return message.reply("+backup create / load");
+        if (!sub) return message.channel.send("+backup create / load");
 
         // CREATE
         if (sub === "create") {
@@ -41,40 +41,40 @@ module.exports = {
                 backup.channels.push({
                     name: ch.name,
                     type: ch.type,
-                    position: ch.position,
-                    parent: ch.parentId
+                    topic: ch.topic || null,
+                    nsfw: ch.nsfw || false,
+                    bitrate: ch.bitrate || null,
+                    userLimit: ch.userLimit || null,
+                    parent: ch.parentId,
+                    position: ch.position
                 });
             });
 
             fs.writeFileSync(PATH, JSON.stringify(backup, null, 2));
-
-            return message.reply("Backup create");
+            return message.channel.send("Backup created");
         }
 
         // LOAD
         if (sub === "load") {
 
-            if (!fs.existsSync(PATH))
-                return message.reply("No backup found");
-
             const backup = JSON.parse(fs.readFileSync(PATH));
 
-            await message.reply("Load backup");
+            await message.channel.send("Loading backup...");
 
-            // DELETE CHANNELS
+            // delete channels
             await Promise.all(
-                message.guild.channels.cache.map(c => c.delete().catch(() => {}))
+                message.guild.channels.cache.map(c => c.delete().catch(()=>{}))
             );
 
-            // DELETE ROLES
+            // delete roles
             await Promise.all(
                 message.guild.roles.cache.map(r => {
                     if (r.id !== message.guild.id && !r.managed)
-                        return r.delete().catch(() => {});
+                        return r.delete().catch(()=>{});
                 })
             );
 
-            // CREATE ROLES
+            // create roles
             await Promise.all(
                 backup.roles
                     .sort((a,b)=>a.position-b.position)
@@ -85,37 +85,38 @@ module.exports = {
                             permissions: BigInt(r.permissions),
                             hoist: r.hoist,
                             mentionable: r.mentionable
-                        }).catch(() => {})
+                        }).catch(()=>{})
                     )
             );
 
-            const createdCategories = new Map();
+            const created = new Map();
 
-            // CREATE CATEGORIES
-            for (const c of backup.channels.filter(c => c.type === 4)) {
+            // create categories
+            for (const c of backup.channels.filter(c=>c.type===4)) {
                 const cat = await message.guild.channels.create({
                     name: c.name,
                     type: 4
-                }).catch(() => {});
-                if (cat) createdCategories.set(c.name, cat.id);
+                }).catch(()=>{});
+                if (cat) created.set(c.name, cat.id);
             }
 
-            // CREATE CHANNELS
-            await Promise.all(
-                backup.channels
-                    .filter(c => c.type !== 4)
-                    .map(c =>
-                        message.guild.channels.create({
-                            name: c.name,
-                            type: c.type,
-                            parent: createdCategories.get(
-                                backup.channels.find(x => x.parent === c.parent)?.name
-                            ) || null
-                        }).catch(() => {})
-                    )
-            );
+            // create channels
+            for (const c of backup.channels.filter(c=>c.type!==4)) {
 
-            message.channel.send("Backup load ⚡");
+                await message.guild.channels.create({
+                    name: c.name,
+                    type: c.type,
+                    topic: c.topic,
+                    nsfw: c.nsfw,
+                    bitrate: c.bitrate,
+                    userLimit: c.userLimit,
+                    parent: created.get(
+                        backup.channels.find(x=>x.parent===c.parent)?.name
+                    ) || null
+                }).catch(()=>{});
+            }
+
+            message.channel.send("Backup loaded");
         }
     }
 };
