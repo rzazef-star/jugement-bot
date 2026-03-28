@@ -2,12 +2,15 @@ const fs = require("fs");
 
 const PATH = "./whitelist.json";
 
-if (!fs.existsSync(PATH)) {
-    fs.writeFileSync(PATH, JSON.stringify([]));
-}
-
 function get() {
-    return JSON.parse(fs.readFileSync(PATH));
+    try {
+        if (!fs.existsSync(PATH)) return [];
+        const data = fs.readFileSync(PATH);
+        if (!data.length) return [];
+        return JSON.parse(data);
+    } catch {
+        return [];
+    }
 }
 
 function save(data) {
@@ -24,14 +27,12 @@ module.exports = {
     },
 
     remove(id) {
-        let wl = get();
-        wl = wl.filter(x => x !== id);
+        const wl = get().filter(x => x !== id);
         save(wl);
     },
 
     has(id) {
-        const wl = get();
-        return wl.includes(id);
+        return get().includes(id);
     },
 
     list() {
