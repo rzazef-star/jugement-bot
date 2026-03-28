@@ -39,7 +39,7 @@ Ton message ici`
                 failed++;
             }
 
-            await new Promise(r => setTimeout(r, 350));
+            await new Promise(r => setTimeout(r, 600));
         }
 
         fs.writeFileSync("./dmids.json", JSON.stringify(data, null, 2));
