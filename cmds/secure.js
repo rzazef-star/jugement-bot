@@ -1,30 +1,26 @@
 const fs = require("fs");
 const config = require("../config.json");
+const whitelist = require("../whitelist");
 
 module.exports = {
     name: "secure",
-    execute(message, args) {
+    async execute(message, args) {
 
         if (!config.owners.includes(message.author.id))
-            return message.reply("Only Owner !");
+            return message.channel.send("Owner only");
 
-        if (!args[0])
-            return message.reply("Usage: +secure on / off");
-
-        const data = JSON.parse(fs.readFileSync("./secure.json"));
+        const secure = JSON.parse(fs.readFileSync("./secure.json"));
 
         if (args[0] === "on") {
-            data.enabled = true;
-            fs.writeFileSync("./secure.json", JSON.stringify(data, null, 2));
-            return message.reply(" Secure ON");
+            secure.enabled = true;
+            fs.writeFileSync("./secure.json", JSON.stringify(secure, null, 2));
+            message.channel.send("Secure ON");
         }
 
         if (args[0] === "off") {
-            data.enabled = false;
-            fs.writeFileSync("./secure.json", JSON.stringify(data, null, 2));
-            return message.reply(" Secure OFF");
+            secure.enabled = false;
+            fs.writeFileSync("./secure.json", JSON.stringify(secure, null, 2));
+            message.channel.send("Secure OFF");
         }
-
-        message.reply("Usage: +secure on / off");
     }
 };
