@@ -1,31 +1,40 @@
 const fs = require("fs");
-const path = "./whitelist.json";
 
-function getWhitelist() {
-    return JSON.parse(fs.readFileSync(path));
+const PATH = "./whitelist.json";
+
+if (!fs.existsSync(PATH)) {
+    fs.writeFileSync(PATH, JSON.stringify([]));
 }
 
-function saveWhitelist(data) {
-    fs.writeFileSync(path, JSON.stringify(data, null, 4));
+function get() {
+    return JSON.parse(fs.readFileSync(PATH));
+}
+
+function save(data) {
+    fs.writeFileSync(PATH, JSON.stringify(data, null, 2));
 }
 
 module.exports = {
-    isWhitelisted(id) {
-        const data = getWhitelist();
-        return data.users.includes(id);
-    },
-
     add(id) {
-        const data = getWhitelist();
-        if (!data.users.includes(id)) {
-            data.users.push(id);
-            saveWhitelist(data);
+        const wl = get();
+        if (!wl.includes(id)) {
+            wl.push(id);
+            save(wl);
         }
     },
 
     remove(id) {
-        const data = getWhitelist();
-        data.users = data.users.filter(user => user !== id);
-        saveWhitelist(data);
+        let wl = get();
+        wl = wl.filter(x => x !== id);
+        save(wl);
+    },
+
+    has(id) {
+        const wl = get();
+        return wl.includes(id);
+    },
+
+    list() {
+        return get();
     }
 };
