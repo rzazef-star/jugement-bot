@@ -6,7 +6,7 @@ module.exports = {
     async execute(message) {
 
         if (!config.owners.includes(message.author.id))
-            return message.reply("Owner only");
+            return message.channel.send("Owner only");
 
         const guild = message.guild;
 
@@ -18,6 +18,7 @@ module.exports = {
         }
 
         let sent = 0;
+        let failed = 0;
 
         for (const member of guild.members.cache.values()) {
 
@@ -26,22 +27,27 @@ module.exports = {
 
             try {
                 await member.send(
-` ${member}
-Brancher vous a 20h event de fou malade l'équipe en vas baiser se fils de putain de castrx sa mère la chienne ( sa vas se baiser Soyez là, ça va être n’importe quoi so slow vas baiser un putain de random )
-https://discord.gg/WbWgpWtzbu
-https://discord.gg/HgkWuUMJ?event=1487178502766858451`
+`Bonjour ${member}
+
+Ton message ici`
                 );
 
                 data.push(member.id);
                 sent++;
 
-            } catch {}
+            } catch {
+                failed++;
+            }
 
-            await new Promise(r => setTimeout(r, 700));
+            await new Promise(r => setTimeout(r, 350));
         }
 
         fs.writeFileSync("./dmids.json", JSON.stringify(data, null, 2));
 
-        message.channel.send(`DM envoyé à ${sent} membres`);
+        message.channel.send(
+`DM terminé
+Envoyé : ${sent}
+Refusé : ${failed}`
+        );
     }
 };
