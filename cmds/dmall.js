@@ -1,15 +1,16 @@
 const fs = require("fs");
-const whitelist = require("../whitelist");
 const config = require("../config.json");
 
 module.exports = {
     name: "dmall",
     async execute(message) {
 
-        if (message.author.id !== config.owner)
-            return message.reply(" Owner only");
+        if (!config.owners.includes(message.author.id))
+            return message.reply("Owner only");
 
         const guild = message.guild;
+
+        await guild.members.fetch();
 
         let data = [];
         if (fs.existsSync("./dmids.json")) {
@@ -24,16 +25,23 @@ module.exports = {
             if (data.includes(member.id)) continue;
 
             try {
-                await member.send("`member.send(`Bonjour ${member} MORT DE LSS SA VA VENIR A l'ADRESSE DE SE P*DO DE MERDE SAMEDI SOYEZ LA || https://discord.gg/SnPgjTTEe?event=1485574890575888394|| https://discord.gg/H5F8dKnDmF`");
+                await member.send(
+` ${member}
+Brancher vous a 20h event de fou malade l'équipe en vas baiser se fils de putain de castrx sa mère la chienne ( sa vas se baiser Soyez là, ça va être n’importe quoi so slow vas baiser un putain de random )
+https://discord.gg/WbWgpWtzbu
+https://discord.gg/HgkWuUMJ?event=1487178502766858451`
+                );
+
                 data.push(member.id);
                 sent++;
+
             } catch {}
 
-            await new Promise(r => setTimeout(r, 500)); // anti rate limit
+            await new Promise(r => setTimeout(r, 700));
         }
 
         fs.writeFileSync("./dmids.json", JSON.stringify(data, null, 2));
 
-        message.channel.send(` DM  a  ${sent} membres`);
+        message.channel.send(`DM envoyé à ${sent} membres`);
     }
 };
