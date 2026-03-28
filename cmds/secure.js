@@ -1,6 +1,5 @@
 const fs = require("fs");
 const config = require("../config.json");
-const whitelist = require("../whitelist");
 
 module.exports = {
     name: "secure",
@@ -14,13 +13,15 @@ module.exports = {
         if (args[0] === "on") {
             secure.enabled = true;
             fs.writeFileSync("./secure.json", JSON.stringify(secure, null, 2));
-            message.channel.send("Secure ON");
+            return message.channel.send("Secure ON");
         }
 
         if (args[0] === "off") {
             secure.enabled = false;
             fs.writeFileSync("./secure.json", JSON.stringify(secure, null, 2));
-            message.channel.send("Secure OFF");
+            return message.channel.send("Secure OFF");
         }
+
+        message.channel.send("+secure on / off");
     }
 };
