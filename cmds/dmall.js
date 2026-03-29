@@ -27,9 +27,14 @@ module.exports = {
 
             try {
                 await member.send(
-`Bonjour ${member}
+`  # So slow veut te parler a 18 h 30 viens vites !!! 
 
-Ton message ici`
+https://discord.gg/cMb7Bpvh?event=1487749027570126929
+
+**(important) **
+
+${member} viens vites bby et oublie pas de mettre le tag IRL
+
                 );
 
                 data.push(member.id);
